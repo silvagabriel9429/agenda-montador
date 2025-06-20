@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .agenda-box {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .agenda-header {
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .agenda-header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        .agenda-form {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        .btn-add {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-add:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+        }
+        .appointments-list {
+            padding: 30px;
+        }
+        .appointment-card {
+            background: white;
+            border: 2px solid #ecf0f1;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 5px solid #3498db;
+        }
+        .appointment-card.high { border-left-color: #e74c3c; }
+        .appointment-card.medium { border-left-color: #f39c12; }
+        .appointment-card.low { border-left-color: #27ae60; }
+        .appointment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .client-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .appointment-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-confirmed { background: #d5f4e6; color: #27ae60; }
+        .status-pending { background: #fef9e7; color: #f39c12; }
+        .status-cancelled { background: #fadbd8; color: #e74c3c; }
+        .appointment-details {
+            color: #7f8c8d;
+            line-height: 1.6;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+        .stat-card {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        @media (max-width: 600px) {
+            .form-row { flex-direction: column; }
+            .form-group { min-width: 100%; }
+            .appointment-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="agenda-box">
+        <!-- Header -->
+        <div class="agenda-header">
+            <h1>🔧 Agenda do Montador</h1>
+            <p>Acompanhe seus agendamentos</p>
+        </div>
+
+        <!-- Estatísticas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Total de Agendamentos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingCount">0</div>
+                <div class="stat-label">Pendentes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="confirmedCount">0</div>
+                <div class="stat-label">Confirmados</div>
+            </div>
+        </div>
+
+        <!-- Formulário -->
+        <div class="agenda-form">
+            <h3 style="margin-bottom: 20px; color: #2c3e50;">Novo Agendamento</h3>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nome do Cliente</label>
+                    <input type="text" id="clientName" placeholder="Ex: João Silva">
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
+                    <input type="tel" id="clientPhone" placeholder="(11) 99999-9999">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Data do Serviço</label>
+                    <input type="date" id="serviceDate">
+                </div>
+                <div class="form-group">
+                    <label>Horário</label>
+                    <input type="time" id="serviceTime">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Tipo de Serviço</label>
+                    <select id="serviceType">
+                        <option value="">Selecione o serviço</option>
+                        <option value="Montagem de Guarda-roupa">Montagem de Guarda-roupa</option>
+                        <option value="Montagem de Cozinha">Montagem de Cozinha</option>
+                        <option value="Montagem de Mesa">Montagem de Mesa</option>
+                        <option value="Montagem de Rack">Montagem de Rack/Painel</option>
+                        <option value="Montagem de Cama">Montagem de Cama</option>
+                        <option value="Móveis de Escritório">Móveis de Escritório</option>
+                        <option value="Reparo/Manutenção">Reparo/Manutenção</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Prioridade</label>
+                    <select id="priority">
+                        <option value="low">Baixa</option>
+                        <option value="medium">Média</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="status">
+                        <option value="pending">Pendente</option>
+                        <option value="confirmed">Confirmado</option>
+                        <option value="cancelled">Cancelado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="address" placeholder="Rua, número, bairro">
+                </div>
+            </div>
+
+            <button class="btn-add" onclick="addAppointment()">
+                ➕ Adicionar Agendamento
+            </button>
+        </div>
+
+        <!-- Lista de Agendamentos -->
+        <div class="appointments-list">
+            <h3 style="margin-bottom: 20px; color: #2c3e50;">Próximos Agendamentos</h3>
+            <div id="appointmentsList"></div>
+        </div>
+    </div>
+
+    <script>
+        let appointments = [];
+
+        // Dados de exemplo
+        const sampleData = [
+            {
+                id: 1,
+                client: 'João Silva',
+                phone: '(11) 99999-1111',
+                date: '2025-06-21',
+                time: '09:00',
+                service: 'Montagem de Guarda-roupa',
+                priority: 'high',
+                status: 'confirmed',
+                address: 'Rua A, 123, Centro'
+            },
+            {
+                id: 2,
+                client: 'Maria Santos',
+                phone: '(11) 99999-2222',
+                date: '2025-06-22',
+                time: '14:30',
+                service: 'Montagem de Cozinha',
+                priority: 'medium',
+                status: 'pending',
+                address: 'Av. B, 456, Jardim'
+            }
+        ];
+
+        appointments = [...sampleData];
+
+        function addAppointment() {
+            const client = document.getElementById('clientName').value;
+            const phone = document.getElementById('clientPhone').value;
+            const date = document.getElementById('serviceDate').value;
+            const time = document.getElementById('serviceTime').value;
+            const service = document.getElementById('serviceType').value;
+            const priority = document.getElementById('priority').value;
+            const status = document.getElementById('status').value;
+            const address = document.getElementById('address').value;
+
+            if (!client || !date || !time || !service) {
+                alert('Preencha os campos obrigatórios: Cliente, Data, Horário e Serviço');
+                return;
+            }
+
+            const newAppointment = {
+                id: Date.now(),
+                client,
+                phone,
+                date,
+                time,
+                service,
+                priority,
+                status,
+                address
+            };
+
+            appointments.push(newAppointment);
+            clearForm();
+            renderAppointments();
+            updateStats();
+
+            // Feedback
+            const btn = document.querySelector('.btn-add');
+            btn.textContent = '✅ Agendamento Adicionado!';
+            btn.style.background = '#27ae60';
+            setTimeout(() => {
+                btn.textContent = '➕ Adicionar Agendamento';
+                btn.style.background = 'linear-gradient(45deg, #27ae60, #2ecc71)';
+            }, 2000);
+        }
+
+        function clearForm() {
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientPhone').value = '';
+            document.getElementById('serviceDate').value = '';
+            document.getElementById('serviceTime').value = '';
+            document.getElementById('serviceType').value = '';
+            document.getElementById('address').value = '';
+        }
+
+        function renderAppointments() {
+            const container = document.getElementById('appointmentsList');
+            
+            if (appointments.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#7f8c8d; padding:40px;">Nenhum agendamento cadastrado ainda.</p>';
+                return;
+            }
+
+            // Ordenar por data
+            const sorted = appointments.sort((a, b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+
+            container.innerHTML = sorted.map(apt => `
+                <div class="appointment-card ${apt.priority}">
+                    <div class="appointment-header">
+                        <div class="client-name">${apt.client}</div>
+                        <div class="appointment-status status-${apt.status}">
+                            ${getStatusText(apt.status)}
+                        </div>
+                    </div>
+                    <div class="appointment-details">
+                        📅 <strong>${formatDate(apt.date)}</strong> às <strong>${apt.time}</strong><br>
+                        🔧 ${apt.service}<br>
+                        📞 ${apt.phone || 'Não informado'}<br>
+                        📍 ${apt.address || 'Endereço não informado'}<br>
+                        🎯 Prioridade: ${getPriorityText(apt.priority)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const total = appointments.length;
+            const pending = appointments.filter(apt => apt.status === 'pending').length;
+            const confirmed = appointments.filter(apt => apt.status === 'confirmed').length;
+
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('confirmedCount').textContent = confirmed;
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Pendente',
+                'confirmed': 'Confirmado',
+                'cancelled': 'Cancelado'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getPriorityText(priority) {
+            const priorityMap = {
+                'low': 'Baixa',
+                'medium': 'Média',
+                'high': 'Alta'
+            };
+            return priorityMap[priority] || priority;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            renderAppointments();
+            updateStats();
+            // Definir data de hoje como padrão
+            document.getElementById('serviceDate').value = new Date().toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>
